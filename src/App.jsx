@@ -24,6 +24,7 @@ function App() {
   const [appLoading, setAppLoading] = useState(Boolean(token));
 
   const messagesEndRef = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -476,11 +477,13 @@ function App() {
 
   return (
     <div style={styles.app}>
-      <aside style={styles.sidebar}>
+      <style>{responsiveStyles}</style>
+      <div className={`mobile-sidebar-backdrop ${sidebarOpen ? "visible" : ""}`} onClick={() => setSidebarOpen(false)} />
+      <aside className={`app-sidebar ${sidebarOpen ? "sidebar-open" : ""}`} style={styles.sidebar}>
         <h2 style={styles.logo}>Gemini AI</h2>
 
         <button
-          onClick={createConversation}
+          onClick={() => { createConversation(); setSidebarOpen(false); }}
           style={styles.newChatButton}
           disabled={loading}
         >
@@ -504,7 +507,7 @@ function App() {
               }}
             >
               <button
-                onClick={() => loadConversation(conversation.conversation_id)}
+                onClick={() => { loadConversation(conversation.conversation_id); setSidebarOpen(false); }}
                 style={styles.historyButton}
                 disabled={loading}
               >
@@ -544,15 +547,16 @@ function App() {
         </div>
       </aside>
 
-      <main style={styles.main}>
-        <header style={styles.header}>
+      <main className="main" style={styles.main}>
+        <header className="header" style={styles.header}>
+          <button className="mobile-menu-button" type="button" onClick={() => setSidebarOpen(true)} aria-label="Open chat history">☰</button>
           <h2 style={styles.headerTitle}>
             {activeConversation ? "Your Conversation" : "AI Assistant"}
           </h2>
           <span style={styles.status}>● Online</span>
         </header>
 
-        <div style={styles.chatBox}>
+        <div className="chatBox" style={styles.chatBox}>
           {messages.length === 0 && (
             <div style={styles.welcome}>
               <h1>How can I help you today?</h1>
@@ -563,6 +567,7 @@ function App() {
           {messages.map((item, index) => (
             <div
               key={`${index}-${item.role}`}
+              className="messageRow"
               style={{
                 ...styles.messageRow,
                 justifyContent:
@@ -570,12 +575,12 @@ function App() {
               }}
             >
               <div
+                className="message"
                 style={{
                   ...styles.message,
                   background: item.role === "user" ? "#2563eb" : "#27272a",
                 }}
               >
-                <strong>{item.role === "user" ? "You" : "Gemini"}</strong>
                 <p style={styles.messageText}>{item.text}</p>
               </div>
             </div>
@@ -585,7 +590,7 @@ function App() {
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={sendMessage} style={styles.form}>
+        <form className="form" onSubmit={sendMessage} style={styles.form}>
           <input
             value={message}
             onChange={(event) => setMessage(event.target.value)}
@@ -612,6 +617,81 @@ function App() {
     </div>
   );
 }
+
+
+const responsiveStyles = `
+  * { box-sizing: border-box; }
+  html, body, #root { width: 100%; min-height: 100%; margin: 0; }
+  button, input { font: inherit; }
+  .mobile-menu-button { display: none; }
+  .mobile-sidebar-backdrop { display: none; }
+
+  @media (max-width: 700px) {
+    .app-sidebar {
+      position: fixed !important;
+      z-index: 30;
+      inset: 0 auto 0 0;
+      width: min(84vw, 320px) !important;
+      min-width: 0 !important;
+      height: 100dvh;
+      padding: 18px !important;
+      transform: translateX(-105%);
+      transition: transform .22s ease;
+      box-shadow: 12px 0 35px rgba(0,0,0,.35);
+      overflow-y: auto;
+    }
+    .app-sidebar.sidebar-open { transform: translateX(0); }
+    .mobile-sidebar-backdrop.visible {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 29;
+      background: rgba(0,0,0,.58);
+    }
+    .mobile-menu-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      border: 1px solid #3f3f46;
+      border-radius: 9px;
+      background: #18181b;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .app-sidebar .logo { margin-bottom: 20px !important; }
+    main { width: 100%; min-width: 0; }
+    header { height: 58px !important; min-height: 58px !important; padding: 0 12px !important; gap: 10px; }
+    header h2 { flex: 1; min-width: 0; margin: 0; font-size: 16px !important; }
+    header span { white-space: nowrap; font-size: 11px !important; }
+    .chatBox { padding: 14px !important; gap: 14px !important; }
+    .messageRow { min-width: 0; }
+    .message { max-width: 92% !important; padding: 11px 13px !important; font-size: 14px; }
+    .messageText { margin: 0 !important; overflow-wrap: anywhere; }
+    .form { padding: 10px 12px !important; gap: 8px !important; }
+    .form input { min-width: 0; padding: 12px !important; font-size: 16px !important; }
+    .form button { min-height: 44px; padding: 0 16px !important; }
+    .disclaimer { margin: 0; padding: 0 8px 8px !important; font-size: 10px !important; }
+    .welcome { padding: 0 12px; }
+    .welcome h1 { font-size: 23px; }
+    .welcome p { font-size: 14px; }
+    .authPage { min-height: 100dvh !important; padding: 16px !important; }
+    .authCard { padding: 25px 20px !important; border-radius: 14px !important; }
+    .authTitle { font-size: 24px !important; }
+  }
+  @media (max-width: 360px) {
+    .status { display: none; }
+    .message { max-width: 96% !important; }
+    .form button { padding: 0 12px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-sidebar { transition: none !important; }
+  }
+`;
 
 const styles = {
   app: {
